@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_${MODE}_container
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ${MODE}_network
+    # healthcheck:
+    #   test: ["CMD-SHELL", "pg_isready -U postgres"]     # Check if PostgreSQL is ready
+    #   interval: 10s                                     # Run the check every 10 seconds
+    #   timeout: 5s                                       # Wait max 5 seconds for the command to complete
+    #   retries: 5                                        # Mark as unhealthy after 5 failed checks
+    #   start_period: 15s                                 # Wait 15 seconds before starting checks (startup grace period)
+
+volumes:
+  postgres_data:
+
+networks:
+  development_network:
+    driver: bridge

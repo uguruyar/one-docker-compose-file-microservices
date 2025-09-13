@@ -15,7 +15,7 @@ services:
       - backend-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "echo 'SELECT 1' | /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $${MSSQL_SA_PASSWORD}"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P D3v3l0pm3nt! -Q 'SELECT 1'"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -36,30 +36,15 @@ services:
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mongo -u admin -p D3v3l0pm3nt! --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")'"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  mongo-express:
-    image: mongo-express:latest
-    container_name: mongo-express
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: "D3v3l0pm3nt!"
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      TZ: Europe/Istanbul
-    networks:
-      - backend-network
-    depends_on:
-      - mongodb
+      start_period: 30s
 
   # RabbitMQ
   rabbitmq:
-    image: rabbitmq:management-latest
+    image: rabbitmq:latest
     container_name: rabbitmq
     ports:
       - "5672:5672"
@@ -94,14 +79,13 @@ services:
     networks:
       - backend-network
     healthcheck:
-      #test: ["CMD", "redis-cli", "-a", "D3v3l0pm3nt!", "ping"]
-      test: ["CMD", "redis-cli", "-a", "$(grep ^requirepass /usr/local/etc/redis/redis.conf | awk '{print $2}')", "ping"]
+      test: ["CMD", "redis-cli", "-a", "D3v3l0pm3nt!", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   redis-insight:
-    image: redis/redis-insight:latest
+    image: redis/redisinsight:latest
     container_name: redis-insight
     restart: unless-stopped
     ports:
@@ -127,7 +111,7 @@ services:
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -152,7 +136,7 @@ services:
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

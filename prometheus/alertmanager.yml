@@ -1,0 +1,15 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: 'default-receiver'
+
+receivers:
+  - name: 'default-receiver'
+    email_configs:
+      - to: 'your-email@example.com'  # Uyarıları göndermek için e-posta adresi
+        from: 'alertmanager@example.com'
+        smarthost: 'smtp.example.com:587'
+        auth_username: 'your-username'
+        auth_password: 'your-password'
+        require_tls: true

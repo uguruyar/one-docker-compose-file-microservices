@@ -21,6 +21,19 @@ services:
       timeout: 5s
       retries: 5
 
+  # MSSQL Exporter
+  mssql-exporter:
+    image: danieloliver/mssql_exporter:latest
+    container_name: mssql-exporter
+    platform: linux/amd64
+    environment:
+      - PROMETHEUS_MSSQL_DataSource=Server=mssql:1433;User ID=sa;Password=D3v3l0pm3nt!;Initial Catalog=master;Encrypt=False;TrustServerCertificate=True;
+    ports:
+      - "9182:9182"
+    networks:
+      - backend-network
+    restart: unless-stopped
+
   # MongoDB
   mongodb:
     image: mongo:latest
@@ -43,6 +56,7 @@ services:
       retries: 5
       start_period: 30s
 
+  # Postgresql
   postgres:
     image: postgres:latest
     container_name: postgres
@@ -58,6 +72,19 @@ services:
     restart: unless-stopped
     networks:
       - backend-network
+
+  # PostgreSQL Exporter
+  postgres-exporter:
+    image: wrouesnel/postgres_exporter:latest
+    container_name: postgres-exporter
+    platform: linux/amd64
+    environment:
+      DATA_SOURCE_NAME: "postgresql://admin:D3v3l0pm3nt!@postgres:5432/developmentdb?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - backend-network
+    restart: unless-stopped
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -176,6 +203,19 @@ services:
       timeout: 5s
       retries: 5
 
+  # Redis Exporter
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter
+    environment:
+      REDIS_PASSWORD: "D3v3l0pm3nt!"
+      REDIS_ADDR: "my-secure-redis:6379"
+    ports:
+      - "9121:9121"
+    networks:
+      - backend-network
+    restart: unless-stopped
+
   redis-insight:
     image: redis/redisinsight:latest
     container_name: redis-insight
@@ -281,6 +321,42 @@ services:
       - jaeger
       - mssql
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090" # Prometheus Web UI
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - "9093:9093" # Alert Manager Web UI
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    networks:
+      - backend-network
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100" # Node Exporter metric endpoint
+    networks:
+      - backend-network
+    restart: unless-stopped
+
 volumes:
   mssql-data:
   mongo_data:
@@ -290,6 +366,8 @@ volumes:
   redis_data:
   kafka_data:
   grafana-data:
+  prometheus_data:
+  alertmanager_data:
 
 networks:
   backend-network:

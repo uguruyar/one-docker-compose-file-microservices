@@ -5,16 +5,15 @@ receivers:
       http:
 
 exporters:
-  jaeger:
-    endpoint: jaeger:14250
+  otlp/jaeger:
+    endpoint: "http://jaeger:4318"  # Jaeger OTLP HTTP port
     tls:
       insecure: true
 
-  logging: # Console log için
-    loglevel: debug
+  debug: {}   # console logging
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [jaeger, logging]
+      exporters: [otlp/jaeger, debug]

@@ -100,7 +100,34 @@ This repository contains a **Docker Compose** setup for running essential backen
 
 ---
 
-### 7. Grafana
+### 7. OpenTelemetry Collector
+
+- **Image:** `otel/opentelemetry-collector-contrib:0.114.0`
+- **Ports:** 
+  - `4317` (OTLP gRPC)
+  - `4318` (OTLP HTTP)
+  - `55679` (zPages debug)
+- **Purpose:** Receives traces from applications and exports to Jaeger and logging.
+
+> Collector configuration is defined in `otel-collector-config.yaml`.
+
+---
+
+### 8. Jaeger (All-in-One)
+
+- **Image:** `jaegertracing/all-in-one:latest`
+- **Ports:** 
+  - `16686` (Jaeger UI)
+  - `6831/udp`, `6832/udp` (Agent)
+  - `14268` (Collector HTTP)
+  - `14250` (Collector gRPC)
+- **Purpose:** Stores and visualizes distributed traces sent by OpenTelemetry Collector.
+
+> Access Jaeger UI at [http://localhost:16686](http://localhost:16686).
+
+---
+
+### 9. Grafana
 
 - **Image:** `grafana/grafana:latest`
 - **Port:** `3000`
@@ -110,6 +137,14 @@ This repository contains a **Docker Compose** setup for running essential backen
 - **UI:** [http://localhost:3000](http://localhost:3000)
 
 > Add datasources such as MSSQL or MongoDB and create dashboards in Grafana.
+
+---
+
+### OpenTelemetry & Jaeger
+- OpenTelemetry Collector receives traces from applications.
+- Collector exports traces to Jaeger and logging.
+- Jaeger UI is accessible at [http://localhost:16686](http://localhost:16686).
+- Configure applications to send OTLP traces to Collector (`4317` gRPC / `4318` HTTP).
 
 ---
 
@@ -132,7 +167,6 @@ docker compose up -d --build
 
 ---
 
-
 ## Service UIs and Access
 
 You can access the management UIs of the services using the following URLs and credentials:
@@ -142,11 +176,15 @@ You can access the management UIs of the services using the following URLs and c
 | RabbitMQ          | [http://localhost:15672](http://localhost:15672) | admin    | D3v3l0pm3nt!   |
 | Redis Insight     | [http://localhost:8001](http://localhost:8001)  | N/A      | N/A             |
 | Kafka UI          | [http://localhost:8080](http://localhost:8080)  | N/A      | N/A             |
+| Jaeger UI         | [http://localhost:16686](http://localhost:16686)| N/A      | N/A             |
 | Grafana           | [http://localhost:3000](http://localhost:3000)  | admin    | admin           |
 
 > Note:
 > - MSSQL, MongoDB, Redis, Zookeeper, and Kafka do not have native UIs exposed in this setup except through the above management tools.
 > - For database access (MSSQL, MongoDB, Redis), use your preferred client with the credentials provided in the [Services](#services) section.
+
+
+---
 
 ## Additional Configuration
 

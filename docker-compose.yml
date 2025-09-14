@@ -36,11 +36,102 @@ services:
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD-SHELL", "mongo -u admin -p D3v3l0pm3nt! --authenticationDatabase admin --eval 'db.adminCommand(\"ping\")'"]
+      test: ["CMD-SHELL", "mongosh -u admin -p D3v3l0pm3nt! --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })'"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data
+      - ./initdb.d:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: "D3v3l0pm3nt!"
+      POSTGRES_DB: developmentdb
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - backend-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    volumes:
+      - pgadmin_working_dir:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: "D3v3l0pm3nt!"
+    depends_on:
+      - postgres
+    ports:
+      - "5433:80"
+    networks:
+      - backend-network
+  
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    depends_on:
+      - postgres
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: developmentdb
+      MB_DB_PORT: 5432
+      MB_DB_USER: admin
+      MB_DB_PASS: "D3v3l0pm3nt!"
+      MB_DB_HOST: postgres
+    ports:
+      - "5434:3000"
+    networks:
+      - backend-network
+
+  redash-server:
+    image: redash/redash:latest
+    platform: linux/amd64
+    container_name: redash
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      REDASH_DATABASE_URL: "postgresql://admin:D3v3l0pm3nt%21@postgres:5432/developmentdb"
+      REDASH_REDIS_URL: "redis://redis:6379/0"
+      REDASH_SECRET_KEY: mysecretkey
+    ports:
+      - "5000:5000"
+    networks:
+      - backend-network
+
+  redash-worker:
+    image: redash/redash:latest
+    platform: linux/amd64
+    container_name: redash_worker
+    depends_on:
+      - redash-server
+    environment:
+      REDASH_DATABASE_URL: "postgresql://admin:D3v3l0pm3nt%21@postgres:5432/developmentdb"
+      REDASH_REDIS_URL: "redis://redis:6379/0"
+      QUEUES: "queries,scheduled_queries,celery"
+      WORKERS_COUNT: 2
+    networks:
+      - backend-network
+
+  redash-scheduler:
+    image: redash/redash:latest
+    platform: linux/amd64
+    container_name: redash_scheduler
+    depends_on:
+      - redash-server
+    environment:
+      REDASH_DATABASE_URL: "postgresql://admin:D3v3l0pm3nt%21@postgres:5432/developmentdb"
+      REDASH_REDIS_URL: "redis://redis:6379/0"
+      QUEUES: "scheduled_queries"
+    networks:
+      - backend-network
 
   # RabbitMQ
   rabbitmq:
@@ -79,7 +170,7 @@ services:
     networks:
       - backend-network
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "D3v3l0pm3nt!", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a D3v3l0pm3nt! ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -128,7 +219,7 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092 ###PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       TZ: Europe/Istanbul
     volumes:
@@ -209,6 +300,8 @@ services:
 volumes:
   mssql-data:
   mongo_data:
+  postgresql_data:
+  pgadmin_working_dir:
   rabbitmq_data:
   redis_data:
   zookeeper_data:

@@ -72,7 +72,7 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
     environment:
       TZ: Europe/Istanbul
@@ -161,7 +161,7 @@ services:
     container_name: otel-collector
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     ports:
       - "4317:4317"   # OTLP gRPC (apps will connect to this)
       - "4318:4318"   # OTLP HTTP

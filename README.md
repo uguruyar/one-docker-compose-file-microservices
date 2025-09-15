@@ -41,7 +41,66 @@ This repository contains a **Docker Compose** setup for running essential backen
 
 ---
 
-### 3. RabbitMQ
+### 3. PostgreSQL
+
+- **Image:** `postgres:latest`
+- **Port:** `5432`
+- **User:** `admin`
+- **Password:** `D3v3l0pm3nt!`
+- **Database:** `developmentdb`
+- **Volume:** `postgresql_data:/var/lib/postgresql/data`
+- **Initialization Scripts:** Mounted from `./initdb.d`
+
+> Use any PostgreSQL client (pgcli, DBeaver, or `psql`) to connect using the credentials above. Initial SQL scripts in `initdb.d` will be executed on container startup.
+
+---
+
+### 4. PgAdmin
+
+- **Image:** `dpage/pgadmin4:latest`
+- **Port:** `5433`
+- **Admin Email:** `admin@example.com`
+- **Password:** `D3v3l0pm3nt!`
+- **Volume:** `pgadmin_working_dir:/var/lib/pgadmin`
+- **UI:** [http://localhost:5433](http://localhost:5433)
+
+> Use PgAdmin to manage PostgreSQL databases. Connect to the `postgres` container using the credentials from the PostgreSQL service.
+
+---
+
+### 5. Metabase
+
+- **Image:** `metabase/metabase:latest`
+- **Port:** `5434`
+- **Database Connection:**
+  - **DB Type:** PostgreSQL
+  - **DB Name:** `developmentdb`
+  - **User:** `admin`
+  - **Password:** `D3v3l0pm3nt!`
+  - **Host:** `postgres`
+  - **Port:** `5432`
+- **UI:** [http://localhost:5434](http://localhost:5434)
+
+> Metabase allows you to build dashboards and query your PostgreSQL database without writing SQL. Configure additional datasources if needed.
+
+---
+
+### 6. Redash
+
+- **Server Image:** `redash/redash:latest`
+- **Worker Image:** `redash/redash:latest`
+- **Scheduler Image:** `redash/redash:latest`
+- **Port:** `5000`
+- **Database:** PostgreSQL (`developmentdb`)
+- **Redis URL:** `redis://redis:6379/0`
+- **Secret Key:** `mysecretkey`
+- **UI:** [http://localhost:5000](http://localhost:5000)
+
+> Redash is a data visualization and query tool. Connect it to PostgreSQL or other datasources and create queries, dashboards, and alerts.
+
+---
+
+### 7. RabbitMQ
 
 - **Image:** `rabbitmq:latest`
 - **Ports:** `5672` (AMQP), `15672` (Management UI)
@@ -54,7 +113,7 @@ This repository contains a **Docker Compose** setup for running essential backen
 
 ---
 
-### 4. Redis
+### 8. Redis
 
 - **Image:** `redis:latest`
 - **Port:** `6379`
@@ -73,16 +132,7 @@ This repository contains a **Docker Compose** setup for running essential backen
 
 ---
 
-### 5. Zookeeper
-
-- **Image:** `confluentinc/cp-zookeeper:latest`
-- **Port:** `2181`
-- **Healthcheck:** `echo ruok | nc localhost 2181`
-- **Volume:** `zookeeper_data:/var/lib/zookeeper`
-
----
-
-### 6. Kafka
+### 9. Kafka
 
 - **Image:** `confluentinc/cp-kafka:latest`
 - **Port:** `9092`
@@ -100,7 +150,7 @@ This repository contains a **Docker Compose** setup for running essential backen
 
 ---
 
-### 7. OpenTelemetry Collector
+### 10. OpenTelemetry Collector
 
 - **Image:** `otel/opentelemetry-collector-contrib:0.114.0`
 - **Ports:** 
@@ -113,7 +163,7 @@ This repository contains a **Docker Compose** setup for running essential backen
 
 ---
 
-### 8. Jaeger (All-in-One)
+### 11. Jaeger (All-in-One)
 
 - **Image:** `jaegertracing/all-in-one:latest`
 - **Ports:** 
@@ -127,7 +177,7 @@ This repository contains a **Docker Compose** setup for running essential backen
 
 ---
 
-### 9. Grafana
+### 12. Grafana
 
 - **Image:** `grafana/grafana:latest`
 - **Port:** `3000`
@@ -137,6 +187,19 @@ This repository contains a **Docker Compose** setup for running essential backen
 - **UI:** [http://localhost:3000](http://localhost:3000)
 
 > Add datasources such as MSSQL or MongoDB and create dashboards in Grafana.
+
+---
+
+### 13. Prometheus
+
+- **Image:** `prom/prometheus:latest`
+- **Port:** `9090`
+- **Volumes:** 
+  - `prometheus_data:/prometheus`
+  - Configuration files mounted from `./prometheus/prometheus.yml` and `./prometheus/alert_rules.yml`
+- **UI:** [http://localhost:9090](http://localhost:9090)
+
+> Prometheus scrapes metrics from exporters (MSSQL, PostgreSQL, Redis, Node Exporter, etc.). Configure targets in `prometheus.yml` and alerts in `alert_rules.yml`.
 
 ---
 
@@ -171,18 +234,25 @@ docker compose up -d --build
 
 You can access the management UIs of the services using the following URLs and credentials:
 
-| Service           | UI URL                     | Username | Password          |
-|------------------|----------------------------|----------|-----------------|
-| RabbitMQ          | [http://localhost:15672](http://localhost:15672) | admin    | D3v3l0pm3nt!   |
-| Redis Insight     | [http://localhost:8001](http://localhost:8001)  | N/A      | N/A             |
-| Kafka UI          | [http://localhost:8080](http://localhost:8080)  | N/A      | N/A             |
-| Jaeger UI         | [http://localhost:16686](http://localhost:16686)| N/A      | N/A             |
-| Grafana           | [http://localhost:3000](http://localhost:3000)  | admin    | admin           |
+| Service           | UI URL                                           | Username          | Password       |
+|-------------------|--------------------------------------------------|------------------ |----------------|
+| MSSQL             | N/A                                              | SA                | D3v3l0pm3nt!   |
+| MongoDB           | N/A                                              | admin             | D3v3l0pm3nt!   |
+| PostgreSQL        | N/A                                              | admin             | D3v3l0pm3nt!   |
+| PgAdmin           | [http://localhost:5433](http://localhost:5433)   | admin@example.com | D3v3l0pm3nt!   |
+| Metabase          | [http://localhost:5434](http://localhost:5434)   | admin             | D3v3l0pm3nt!   |
+| Redash            | [http://localhost:5000](http://localhost:5000)   | N/A               | N/A            |
+| RabbitMQ          | [http://localhost:15672](http://localhost:15672) | admin             | D3v3l0pm3nt!   |
+| Redis Insight     | [http://localhost:8001](http://localhost:8001)   | N/A               | N/A            |
+| Kafka UI          | [http://localhost:8080](http://localhost:8080)   | N/A               | N/A            |
+| Jaeger UI         | [http://localhost:16686](http://localhost:16686) | N/A               | N/A            |
+| Grafana           | [http://localhost:3000](http://localhost:3000)   | admin             | admin          |
+| Prometheus        | [http://localhost:9090](http://localhost:9090)   | N/A               | N/A            |
 
 > Note:
-> - MSSQL, MongoDB, Redis, Zookeeper, and Kafka do not have native UIs exposed in this setup except through the above management tools.
-> - For database access (MSSQL, MongoDB, Redis), use your preferred client with the credentials provided in the [Services](#services) section.
-
+> - MSSQL, MongoDB, and PostgreSQL do not have native UIs exposed in this setup except through PgAdmin or external clients.
+> - Redash, Metabase, Grafana, Prometheus, and monitoring UIs provide dashboards and visualization tools.
+> - For database access (MSSQL, MongoDB, PostgreSQL), use your preferred client with the credentials provided in the [Services](#services) section.
 
 ---
 
@@ -211,9 +281,8 @@ This section provides additional configuration tips and notes for the backend se
 - Redis Insight can be used to explore data and monitor keyspace.
 - Adjust memory limits and eviction policies in `redis.conf` if needed.
 
-### 5. Kafka & Zookeeper
+### 5. Kafka
 - Kafka broker is configured to run on `kafka:9092`.
-- Zookeeper client port: `2181`.
 - Kafka UI can be used to monitor topics, consumer groups, and messages.
 - For production, consider SSL/SASL authentication and replication setup.
 
